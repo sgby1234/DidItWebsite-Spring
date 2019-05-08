@@ -38,22 +38,6 @@ public class Controller {
 	private static final ConcurrentMap<String, CompleteUser> sessions = new ConcurrentHashMap<>();
 
 
-	
-	@RequestMapping("/")
-	public String retrieveCards() {
-			return "Shifra!";
-	}
-	
-    @RequestMapping("/signup")
-    public String index(@PathVariable(name="id") String id) {
-        return "Greetings from Spring Boot! In a. Your id is " + id;
-    }
-    
-    @RequestMapping("/b")
-    public String index() {
-        return "Greetings from Spring Boot! In B";
-    }
-    
     /**
      * Login method will return the usersInformatino
      * @throws MultipleRecordsReturnedException 
