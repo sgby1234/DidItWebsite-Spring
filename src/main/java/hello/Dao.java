@@ -1,5 +1,9 @@
 package hello;
 
+import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +15,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import Objects.CompleteUser;
+import Objects.Goal;
+import Objects.GoalHeadings;
 import database.MultipleRecordsReturnedException;
 
 @Component
@@ -58,6 +64,42 @@ public class Dao {
 		
 	}
 	
+	public List<GoalHeadings> getUsersGoals(int userID)
+	{
+		List<GoalHeadings> goalHeadings = new ArrayList<GoalHeadings>();
+		goalHeadings.addAll(jdbcTemplate.query("SELECT `GoalId`, `GoalName`  FROM `goal` WHERE `UserId` = ?",
+				(rs, rn) -> new GoalHeadings(rs.getInt("GoalId"), rs.getString("GoalName")), userID ));
+		return goalHeadings;
+				
+		
+	}
+	
+	public Goal getGoal(int userId, int goalId)
+	{
+		String sql = "SELECT * FROM GOAL WHERE GoalId = ? AND UserId = ?";
+		
+		try {
+			Goal goal = queryForOneOrZero(sql,
+					(rs, rn) -> { 
+				Date sqlDate= rs.getDate("GoalBeginDate");
+				System.out.println("Will attempt to map the data to a localdate");
+				
+				LocalDate date = sqlDate.toLocalDate();
+				return new Goal(rs.getInt("GoalId"), rs.getInt("UserId"), rs.getInt("GoalLength"),
+					rs.getInt("GoalAmount"), rs.getBoolean("GoalPublic"), date, rs.getString("GoalName"));}, goalId, userId);
+			
+			if(goal == null) {
+				System.out.println("The Goal is null");
+			}
+			return goal;
+		} catch (MultipleRecordsReturnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
+		
+	}
 	
 	/**
 	 * Wrapper method for JdbcTemplate query, will return one object or null if no records were returned
@@ -85,4 +127,29 @@ public class Dao {
 		String name = queryForOneOrZero("SELECT UserFirstName FROM user WHERE UserEmail = ?", (rs, rn) -> new String(rs.getString("UserFirstName")), email);
 		return name;
 	}
+
+	public Boolean updateAmountAccomplished(int userID, String goalID, int newAmount) {
+		// TODO Auto-generated method stub
+		int rowsEffected = jdbcTemplate.update("UPDATE GOAL SET GOALAMOUNT = ? WHERE USERID = ? AND GOALID = ?", newAmount, userID, goalID );
+		System.out.printf("Ran update: %d rows returned\n", rowsEffected);
+		if(rowsEffected == 1) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	public Boolean addGoal(int userID, String goalName, int goalLength, boolean isPublic, LocalDate localDate) {
+
+		Boolean response = false;
+	
+		String sql = "INSERT INTO `goal` (`GoalId`, `UserId`, `GoalName`, `GoalLength`, `GoalBeginDate`, `GoalPublic`, `GoalAmount`) VALUES (NULL, ?, ?, ?, ?, ?, ?)";
+		int rowsEffected = jdbcTemplate.update(sql, userID, goalName, goalLength, java.sql.Date.valueOf( localDate ), isPublic, 0);
+	    response = rowsEffected == 1 ?  true: false;
+					
+		return response;
+	
+	}
 }
+	

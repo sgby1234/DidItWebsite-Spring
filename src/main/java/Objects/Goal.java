@@ -10,18 +10,36 @@ public class Goal {
 	private boolean isPublic;
 	private String description;
 	private LocalDate dateCreated;
-	private boolean enforcedByDay;
+
 	
-	
-	public Goal(int goalID, int userID, int duration, int accomplishedDays, boolean isPublic, boolean enforcedByDay, LocalDate dateCreated, String description )
+	public Goal() {
+		
+	}
+	/**
+	 * 
+	 * @param goalID The Goals id
+	 * @param userID Id of the user with this goal
+	 * @param duration number of days/checkboxes for goal
+	 * @param accomplishedDays
+	 * @param isPublic
+	 * @param dateCreated
+	 * @param description
+	 */
+	public Goal(int goalID, int userID, int duration, int accomplishedDays, boolean isPublic, LocalDate dateCreated, String description )
 	{
 		this.goalID = goalID;
 		this.userID = userID;
 		this.duration = duration;
 		this.accomplishedDays = accomplishedDays;
 		this.isPublic = isPublic;
-		this.enforcedByDay = enforcedByDay;
 		this.dateCreated = dateCreated;
+		this.description = description;
+	}
+	@Override
+	public String toString() {
+		return "Goal [goalID=" + goalID + ", userID=" + userID + ", duration=" + duration + ", accomplishedDays="
+				+ accomplishedDays + ", isPublic=" + isPublic + ", description=" + description + ", dateCreated="
+				+ dateCreated + "]";
 	}
 	public int getUserID() {
 		return userID;
@@ -59,12 +77,7 @@ public class Goal {
 	public void setDateCreated(LocalDate dateCreated) {
 		this.dateCreated = dateCreated;
 	}
-	public boolean isEnforcedByDay() {
-		return enforcedByDay;
-	}
-	public void setEnforcedByDay(boolean enforcedByDay) {
-		this.enforcedByDay = enforcedByDay;
-	}
+
 	
 
 }
