@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import Objects.CompleteUser;
 import Objects.Goal;
 import Objects.GoalHeadings;
+import Objects.UserFriend;
 import database.MultipleRecordsReturnedException;
 
 @Component
@@ -150,6 +151,28 @@ public class Dao {
 					
 		return response;
 	
+	}
+	
+	public ArrayList<UserFriend> getPossibleFriends(int userID)
+	{
+		String sql = "SELECT UserID, UserName FROM `USER` WHERE UserId NOT IN (SELECT FRIENDTWO FROM FRIENDS WHERE FRIENDONE = ? ) AND USERID != ?";
+		ArrayList<UserFriend> possibleFriends = new ArrayList<UserFriend>();
+		possibleFriends.addAll(jdbcTemplate.query(sql, 
+				(rs, rn) -> new UserFriend(rs.getInt("userID"), rs.getString("UserName")),
+				userID, userID));
+		
+		return possibleFriends;
+	}
+	
+	public boolean addFriendship(int friendOneID, int friendTwoID)
+	{
+		System.out.println("Will try to insert friendship with values: " +  friendOneID + ", " + friendTwoID);
+		Boolean response  = false;
+		String sql = "INSERT INTO `friends`(`friendOne`, `friendTwo`) VALUES (?, ?)";
+		int rowsEffected = jdbcTemplate.update(sql, friendOneID, friendTwoID);
+		response = rowsEffected == 1 ?  true: false;
+		
+		return response;
 	}
 }
 	

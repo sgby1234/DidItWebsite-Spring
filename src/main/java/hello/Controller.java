@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 import Objects.CompleteUser;
 import Objects.LoginForm;
 import Objects.SignupForm;
+import Objects.UserFriend;
+import Objects.UserID;
 import Objects.updateGoalAmount;
 import Objects.Goal;
 import Objects.GoalHeadings;
@@ -43,13 +45,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController
 public class Controller {
 
-	private final String userIDDefault ="38400000-8cf0-11bd-b23e-10b96e4ef00d" ;; //TO REMOVE
 	@Autowired
 	Dao dao;
 	private static final ConcurrentMap<String, CompleteUser> sessions = new ConcurrentHashMap<>();
 
 	/**
-	 * Login method will return the usersInformatino
+	 * Login method will return the usersInformation
 	 * 
 	 * @throws MultipleRecordsReturnedException
 	 */
@@ -61,15 +62,11 @@ public class Controller {
 
 		CompleteUser user = dao.Login(email, psw);
 
-		//UUID sessionId = UUID.randomUUID();
-		UUID sessionId = UUID.fromString(userIDDefault); //TO REMOVE
-		
-		
-		
+		UUID sessionId = UUID.randomUUID();
+
 		HttpCookie cookie;
 
 		if (user != null) {
-			System.out.println("The user is :" + user);//TO REMOVE
 			sessions.put(sessionId.toString(), user);
 			cookie = ResponseCookie.from("sessionID", sessionId.toString()).path("/").build();
 
@@ -82,31 +79,41 @@ public class Controller {
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.set(HttpHeaders.SET_COOKIE, cookie.toString());
-		// headers.set("HeaderName", "Headervalue"); - this we had in class. But since
-		// we have cookies we should need it
+
 		return new ResponseEntity<>(true, headers, HttpStatus.ACCEPTED);
 
 	}
-	
-	
+
+	@GetMapping(value = "/getUserName")
+	public String userName(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID)// TO REMOVE
+	{
+		if (sessionID.equals("NoCookie")) {
+			return "";
+		}
+		return sessions.get(sessionID).getUserName();
+	}
+
 	@PostMapping("/addGoal")
-	public Boolean addGoal( @CookieValue(value = "sessionID", defaultValue = userIDDefault) String sessionID, @RequestBody Goal goal) {	 //TO REMOVE - CHANGE THE DEFAULT)
-		//check for cookie
-		if(sessionID.equals("NoCookie")) {
+	public Boolean addGoal(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID,
+			@RequestBody Goal goal) { // TO REMOVE - CHANGE THE DEFAULT)
+		// check for cookie
+		if (sessionID.equals("NoCookie")) {
 			System.out.println("No Cookie detected in /getGoal");
 			return false;
 		}
-		//call DAO to perform insert
+		// call DAO to perform insert
 		CompleteUser user = sessions.get(sessionID);
-		boolean response = dao.addGoal(user.getUserID(), goal.getDescription(), goal.getDuration(), goal.isPublic(), goal.getDateCreated());
-		//return
+		boolean response = dao.addGoal(user.getUserID(), goal.getDescription(), goal.getDuration(), goal.isPublic(),
+				goal.getDateCreated());
+		// return
 		return response;
-		
+
 	}
 
 	@GetMapping("/getGoal")
-	public ResponseEntity<Goal> getGoal(@RequestParam("goalID") String goalID,
-			@CookieValue(value = "sessionID", defaultValue = userIDDefault) String sessionID) { //TO REMOVE - CHANGE THE DEFAULT
+	public ResponseEntity<Goal> Goal(@RequestParam("goalID") String goalID,
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) { // TO REMOVE - CHANGE
+																								// THE DEFAULT
 		if (sessionID.equals("NoCookie")) {
 			System.out.println("No Cookie detected in /getGoal");
 		}
@@ -117,43 +124,43 @@ public class Controller {
 		return new ResponseEntity(g, HttpStatus.OK);
 
 	}
-	
+
 	@PostMapping("/updateAmountAccomplished")
-	public Boolean updateAmountAccomplished(@RequestBody updateGoalAmount newInfo, @CookieValue(value = "sessionID", defaultValue = userIDDefault) String sessionID) { //TO REMOVE - CHANGE THE DEFAULT)
-	
-		if(sessionID.equals("NoCookie")) {
+	public Boolean updateAmountAccomplished(@RequestBody updateGoalAmount newInfo,
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) { // TO REMOVE - CHANGE
+																								// THE DEFAULT)
+
+		if (sessionID.equals("NoCookie")) {
 			return false;
 		}
 		CompleteUser user = sessions.get(sessionID);
-		if(user == null) {
+		if (user == null) {
 			return false;
 		}
-		
-		System.out.println("The Goal Id is " + newInfo.getGoalId() +" The amount is "+ newInfo.getNewAmount());
-		Boolean success =  dao.updateAmountAccomplished(user.getUserID(), newInfo.getGoalId(), newInfo.getNewAmount());
+
+		System.out.println("The Goal Id is " + newInfo.getGoalId() + " The amount is " + newInfo.getNewAmount());
+		Boolean success = dao.updateAmountAccomplished(user.getUserID(), newInfo.getGoalId(), newInfo.getNewAmount());
 		return success;
 	}
 
 	@GetMapping("/getAllGoals")
 	public ResponseEntity<List<GoalHeadings>> getAllGoals(
-			@CookieValue(value = "sessionID", defaultValue = userIDDefault) String sessionID) { //TO REMOVE - CHANGE DEFAULT TO NOCOOKIE
-		
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) { // TO REMOVE - CHANGE
+																								// DEFAULT TO NOCOOKIE
+
 		if (sessionID.equals("NoCookie")) {
 			System.out.println("No cookie found.");
 			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 		} else {
 			// get all goals from database
 			List<GoalHeadings> goals = dao.getUsersGoals(sessions.get(sessionID).getUserID());
-			for(GoalHeadings g: goals)
-			{
+			for (GoalHeadings g : goals) {
 				System.out.println(g);
 			}
 			return new ResponseEntity<>(goals, HttpStatus.OK);
 		}
 
 	}
-	
-	
 
 	@PostMapping("/processSignup")
 	public boolean processSignup(@RequestBody SignupForm form) {
@@ -183,6 +190,37 @@ public class Controller {
 
 	}
 
-	
+	@GetMapping("/viewFriends")
+	public ResponseEntity<List<UserFriend>> friends(
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) {
+
+		if (sessionID.equals("NoCookie")) {
+			System.out.println("No cookie detected");
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+
+		// get all possible friends
+		ArrayList<UserFriend> possibleFriends = dao.getPossibleFriends(sessions.get(sessionID).getUserID());
+		// return a response entity with all possible friends
+		return new ResponseEntity<List<UserFriend>>(possibleFriends, HttpStatus.OK);
+	}
+
+	@PostMapping("/addFriend")
+	public Boolean addFriend(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionId,
+			@RequestBody UserID requestedFriendID) {
+
+		if (sessionId.equals("NoCookie")) {
+			System.out.println("No cookie detected");
+			return false;
+		}
+		if (requestedFriendID == null) {
+			System.out.println("Requested friend string was null.. ");
+			return false;
+		}
+
+		int userId = sessions.get(sessionId).getUserID();
+		return dao.addFriendship(userId, requestedFriendID.getId());
+
+	}
 
 }
