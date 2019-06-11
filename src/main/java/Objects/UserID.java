@@ -1,6 +1,6 @@
 package Objects;
 
-public class UserID {
+public class UserId {
 
 	private int id;
 
@@ -12,10 +12,10 @@ public class UserID {
 		this.id = id;
 	}
 
-	public UserID(int id) {
+	public UserId(int id) {
 		this.id = id;
 	}
-	public UserID()
+	public UserId()
 	{
 		
 	}

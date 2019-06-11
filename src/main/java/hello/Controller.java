@@ -4,9 +4,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import Objects.CompleteUser;
 import Objects.LoginForm;
+import Objects.Message;
 import Objects.SignupForm;
 import Objects.UserFriend;
-import Objects.UserID;
+import Objects.UserId;
+import Objects.UserMessage;
 import Objects.updateGoalAmount;
 import Objects.Goal;
 import Objects.GoalHeadings;
@@ -97,6 +99,7 @@ public class Controller {
 	public Boolean addGoal(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID,
 			@RequestBody Goal goal) { // TO REMOVE - CHANGE THE DEFAULT)
 		// check for cookie
+		System.out.println("Received request to add goal " +goal.getDescription());
 		if (sessionID.equals("NoCookie")) {
 			System.out.println("No Cookie detected in /getGoal");
 			return false;
@@ -119,6 +122,7 @@ public class Controller {
 		}
 
 		int userId = sessions.get(sessionID).getUserID();
+		
 		Goal g = dao.getGoal(userId, Integer.valueOf(goalID));
 		System.out.println("Sending back goal of " + g + " the name is " + g.getDescription());
 		return new ResponseEntity(g, HttpStatus.OK);
@@ -127,9 +131,7 @@ public class Controller {
 
 	@PostMapping("/updateAmountAccomplished")
 	public Boolean updateAmountAccomplished(@RequestBody updateGoalAmount newInfo,
-			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) { // TO REMOVE - CHANGE
-																								// THE DEFAULT)
-
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) {
 		if (sessionID.equals("NoCookie")) {
 			return false;
 		}
@@ -152,7 +154,7 @@ public class Controller {
 			System.out.println("No cookie found.");
 			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 		} else {
-			// get all goals from database
+			// get all goals from database sessions.get(sessionID).getUserID()
 			List<GoalHeadings> goals = dao.getUsersGoals(sessions.get(sessionID).getUserID());
 			for (GoalHeadings g : goals) {
 				System.out.println(g);
@@ -190,8 +192,8 @@ public class Controller {
 
 	}
 
-	@GetMapping("/viewFriends")
-	public ResponseEntity<List<UserFriend>> friends(
+	@GetMapping("/possibleFriends")
+	public ResponseEntity<List<UserFriend>> possibleFriends(
 			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) {
 
 		if (sessionID.equals("NoCookie")) {
@@ -204,11 +206,27 @@ public class Controller {
 		// return a response entity with all possible friends
 		return new ResponseEntity<List<UserFriend>>(possibleFriends, HttpStatus.OK);
 	}
+	
+	@GetMapping("/friends")
+	public ResponseEntity<List<UserFriend>> friends(
+			@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID) {
 
+	    System.out.println("in /friends, cookie value " + sessionID);
+		if (sessionID.equals("NoCookie")) {
+			System.out.println("No cookie detected");
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+
+		// get all possible friends
+		ArrayList<UserFriend> possibleFriends = dao.getFriends(sessions.get(sessionID).getUserID());
+		// return a response entity with all possible friends
+		return new ResponseEntity<List<UserFriend>>(possibleFriends, HttpStatus.OK);
+	}
 	@PostMapping("/addFriend")
 	public Boolean addFriend(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionId,
-			@RequestBody UserID requestedFriendID) {
+			@RequestBody UserId requestedFriendID) {
 
+		 System.out.println("in /addfriends, cookie value " + sessionId);
 		if (sessionId.equals("NoCookie")) {
 			System.out.println("No cookie detected");
 			return false;
@@ -221,6 +239,44 @@ public class Controller {
 		int userId = sessions.get(sessionId).getUserID();
 		return dao.addFriendship(userId, requestedFriendID.getId());
 
+	}
+	
+	
+	@GetMapping("/messages")
+	public ResponseEntity<List<UserMessage>> getMessages(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionID)
+	{
+		if(sessionID.equals("NoCookie")){
+			System.out.println("No cookie deteced");
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+		
+		int userId = sessions.get(sessionID).getUserID();
+		List<UserMessage> messages = dao.getMessages(userId);
+		return new ResponseEntity<List<UserMessage>>(messages, HttpStatus.OK);
+		
+	}
+	
+	
+	@PostMapping("/message")
+	public Boolean addMessage(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionId,
+			@RequestBody Message newMessage)
+	{
+		System.out.println("Received request to to add a message: " +  newMessage.getMessageText() );
+		if (sessionId.equals("NoCookie")) {
+			System.out.println("No cookie detected");
+			return false;
+		}
+		
+		if(newMessage == null)
+		{
+			System.out.println("Message received was null");
+			return false;		
+		}
+		
+		int userId = sessions.get(sessionId).getUserID();
+		return dao.addMessage(userId, newMessage.getMessageText(), newMessage.getMessageDate());
+		
+		
 	}
 
 }

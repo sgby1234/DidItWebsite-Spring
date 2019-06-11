@@ -5,7 +5,6 @@ public class updateGoalAmount {
 	private String goalId;
 	private int newAmount;
 	
-		
 	public updateGoalAmount() {
 		
 	}

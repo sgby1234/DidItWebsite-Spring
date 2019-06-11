@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import Objects.CompleteUser;
 import Objects.Goal;
 import Objects.GoalHeadings;
+import Objects.Message;
+import Objects.UserMessage;
 import Objects.UserFriend;
 import database.MultipleRecordsReturnedException;
 
@@ -155,7 +157,20 @@ public class Dao {
 	
 	public ArrayList<UserFriend> getPossibleFriends(int userID)
 	{
-		String sql = "SELECT UserID, UserName FROM `USER` WHERE UserId NOT IN (SELECT FRIENDTWO FROM FRIENDS WHERE FRIENDONE = ? ) AND USERID != ?";
+		String sql = "SELECT UserID, UserName FROM `USER` WHERE UserId NOT IN (SELECT FRIENDTWO FROM FRIENDS WHERE FRIENDONE = ? )" +
+					" AND USERID != ?";
+		ArrayList<UserFriend> possibleFriends = new ArrayList<UserFriend>();
+		possibleFriends.addAll(jdbcTemplate.query(sql, 
+				(rs, rn) -> new UserFriend(rs.getInt("userID"), rs.getString("UserName")),
+				userID, userID));
+		
+		return possibleFriends;
+	}
+	
+	public ArrayList<UserFriend> getFriends(int userID)
+	{
+		String sql = "SELECT UserID, UserName FROM `USER` WHERE UserId IN (SELECT FRIENDTWO FROM FRIENDS WHERE FRIENDONE = ? )" +
+					" AND USERID != ?";
 		ArrayList<UserFriend> possibleFriends = new ArrayList<UserFriend>();
 		possibleFriends.addAll(jdbcTemplate.query(sql, 
 				(rs, rn) -> new UserFriend(rs.getInt("userID"), rs.getString("UserName")),
@@ -173,6 +188,35 @@ public class Dao {
 		response = rowsEffected == 1 ?  true: false;
 		
 		return response;
+	}
+	
+	public boolean addMessage(int userId, String message, LocalDate messageLocalDate )
+	{
+		String sql = "INSERT INTO `message` (`MessageID`, `UserID`, `MessageText`, `MessageDate`) VALUES (NULL, ?, ?, ?)";
+		int rowsEffected = jdbcTemplate.update(sql, userId, message, java.sql.Date.valueOf( messageLocalDate)  );
+		boolean success = rowsEffected == 1 ? true :false;
+		return success;
+	}
+	
+	public List<UserMessage> getMessages(int userId)
+	{
+		String sql = 		
+		"SELECT UserName, MessageID, message.UserID, MessageText, MessageDate FROM `message` inner join friends on message.UserId = friends.friendTwo "
+		+ "inner join `user` on user.USERID = message.UserID " +
+		"where friends.FriendOne = ? order by message.MessageDate LIMIT 100";
+		
+		List<UserMessage> messages = new ArrayList<UserMessage>();
+		messages.addAll(jdbcTemplate.query(sql,
+			(rs, rn) -> 
+		    { 
+				LocalDate date = rs.getDate("MessageDate").toLocalDate();
+				return new UserMessage(rs.getLong("MessageID"),
+				rs.getLong("UserID"), rs.getString("UserName"), rs.getString("MessageText"), date);
+			}, userId));
+		
+		
+		return messages;
+		
 	}
 }
 	
