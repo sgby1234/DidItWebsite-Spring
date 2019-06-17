@@ -155,6 +155,7 @@ public class Controller {
 			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
 		} else {
 			// get all goals from database sessions.get(sessionID).getUserID()
+			System.out.println("Attempt to get users goals. sessionId: " + sessionID + " userid: " + sessions.get(sessionID).getUserID());;
 			List<GoalHeadings> goals = dao.getUsersGoals(sessions.get(sessionID).getUserID());
 			for (GoalHeadings g : goals) {
 				System.out.println(g);
@@ -222,6 +223,7 @@ public class Controller {
 		// return a response entity with all possible friends
 		return new ResponseEntity<List<UserFriend>>(possibleFriends, HttpStatus.OK);
 	}
+	
 	@PostMapping("/addFriend")
 	public Boolean addFriend(@CookieValue(value = "sessionID", defaultValue = "NoCookie") String sessionId,
 			@RequestBody UserId requestedFriendID) {
@@ -280,3 +282,4 @@ public class Controller {
 	}
 
 }
+________________________________________________
